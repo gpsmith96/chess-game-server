@@ -1,7 +1,7 @@
 const httpServer = require("http").createServer();
 const io = require("socket.io")(httpServer, {
   cors: {
-    origin: "http://localhost:3000",
+    origin: "http://https://multiplayer-chess-game.onrender.com/",
     methods: ["GET", "POST"]
   }
 });
