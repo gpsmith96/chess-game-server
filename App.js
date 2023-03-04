@@ -44,5 +44,9 @@ io.on('connection', (socket) => {
   });
 });
 
+io.engine.on("connection_error", (err) => {
+  console.log(err);
+});
+
 httpServer.listen(8000);
 console.log("Now listening on port 8000");
