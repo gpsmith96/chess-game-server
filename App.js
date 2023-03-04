@@ -6,10 +6,13 @@ const requestListener = function (req, res) {
 const httpServer = require("http").createServer(requestListener);
 const io = require("socket.io")(httpServer, {
   cors: {
-    // origin: "https://multiplayer-chess-game.onrender.com/",
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
+    origin: "https://multiplayer-chess-game.onrender.com/",
+    // origin: "*",
+    methods: ["GET", "POST"],
+    transports: ['websocket', 'polling'],
+    credentials: true
+  },
+  allowEIO3: true
 });
 
 io.on('connection', (socket) => {
