@@ -42,11 +42,11 @@ io.on('connection', (socket) => {
     console.log("broadcast from: " + socket.id + " to room Id " + roomId);
     io.to(roomId).emit("message", msg);
   });
+  socket.on("connect_error", (err) => {
+    console.log(`connect_error due to ${err.message}`);
+  });
 });
 
-io.engine.on("connection_error", (err) => {
-  console.log(err);
-});
 
 httpServer.listen(8000);
 console.log("Now listening on port 8000");
