@@ -6,12 +6,14 @@
     "bufferutil": "^4.0.7",
     "cors": "^2.8.5",
     "express": "^4.18.2",
+    "nodemon": "^2.0.21",
     "socket.io": "^4.6.1",
     "utf-8-validate": "^6.0.3",
     "ws": "^8.12.1"
   },
   "scripts": {
     "start": "node App.js",
+    "devstart": "nodemon App.js",
     "debug": "DEBUG=socket* node App.js"
   }
 }
