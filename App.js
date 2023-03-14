@@ -101,6 +101,15 @@ io.on('connection', (socket) => {
     console.log(`connect_error due to ${err.message}`);
   });
 
+  socket.on("forfeit", () => {
+    console.log("Forfeit from: " + usernames[socket]);
+    socket.rooms.forEach((room) => {
+      if (room !== socket.id) {
+        io.to(room).emit("end_game", (games[room].players[socket.id]) === "White" ? "Black" : "White");
+      }
+    });
+  });
+
   socket.on("get_move_list", () => {
     console.log("Sending move list to " + usernames[socket.id]);
     console.log(games[room].moves);
@@ -110,10 +119,13 @@ io.on('connection', (socket) => {
   socket.on("add_move", (move) => {
     socket.rooms.forEach((room) => {
       if (room !== socket.id) {
-        move.player = games[room].players[socket.id];
-        console.log("Adding move to list: " + JSON.stringify(move));
-        games[room].moves.push(move);
-        io.to(room).emit("send_move_list", games[room].moves);
+        if (games[room].players[socket.id] === games[room].activePlayer) {
+          move.player = games[room].players[socket.id];
+          console.log("Adding move to list: " + JSON.stringify(move));
+          games[room].moves.push(move);
+          games[room].activePlayer = (games[room].activePlayer) === "White" ? "Black" : "White";
+          io.to(room).emit("send_move_list", games[room].moves, games[room].activePlayer);
+        }
       }
     });
   });
@@ -134,12 +146,14 @@ io.on('connection', (socket) => {
             io.to(user).emit("start_game", "Black");
           }
         });
+        games[room].activePlayer = "White";
       }
     });
   });
 
   socket.on("disconnecting", () => {
     console.log(socket.id + " has disconnected");
+    // socket.emit("disconnecting");
     socket.rooms.forEach((room) => {
       socket.to(room).emit("message", "Server", usernames[socket.id] + " has disconnected");
       var users = io.sockets.adapter.rooms.get(room);
