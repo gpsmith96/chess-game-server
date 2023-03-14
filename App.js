@@ -6,8 +6,8 @@ const requestListener = function (req, res) {
 const httpServer = require("http").createServer(requestListener);
 const io = require("socket.io")(httpServer, {
   cors: {
-    // origin: "https://multiplayer-chess-game.onrender.com",
-    origin: "*",
+    origin: "https://multiplayer-chess-game.onrender.com",
+    // origin: "*",
     methods: ["GET", "POST"],
     transports: ['websocket', 'polling'],
     credentials: true
