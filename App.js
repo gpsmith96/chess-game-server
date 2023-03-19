@@ -54,10 +54,10 @@ io.on('connection', (socket) => {
     if (typeof users === 'undefined') {
       users = [];
     }
-    else {
-      socket.emit("message", "Server", "List of " + users.size + (users.size === 1 ? " user":" users") + " in room:")
-      users.forEach((user) => (socket.emit("message", "Server", usernames[user])));
-    }
+    // else {
+    //   socket.emit("message", "Server", "List of " + users.size + (users.size === 1 ? " user":" users") + " in room:")
+    //   users.forEach((user) => (socket.emit("message", "Server", usernames[user])));
+    // }
     if (users.length === 0 || (users.size < 2 && !users.has(socket.id))){
       socket.rooms.forEach((room) => {
         if (room !== socket.id) socket.leave(room);
@@ -105,7 +105,11 @@ io.on('connection', (socket) => {
     console.log("Forfeit from: " + usernames[socket]);
     socket.rooms.forEach((room) => {
       if (room !== socket.id) {
-        io.to(room).emit("end_game", (games[room].players[socket.id]) === "White" ? "Black" : "White");
+        for(let id in games[room].players) { //set the winner to the other player
+          if(id === socket.id) games[room].loser = id;
+          else games[room].winner = id;
+        }
+        io.to(room).emit("end_game", games[room].players[games[room].winner]);
       }
     });
   });
@@ -155,7 +159,13 @@ io.on('connection', (socket) => {
     console.log(socket.id + " has disconnected");
     // socket.emit("disconnecting");
     socket.rooms.forEach((room) => {
-      socket.to(room).emit("message", "Server", usernames[socket.id] + " has disconnected");
+      if (room !== socket.id) {
+        socket.to(room).emit("message", "Server", usernames[socket.id] + " has disconnected");
+        if (!isEmpty(games) & typeof games[room] === 'undefined'){
+          if(!games[room].hasOwnProperty('winner'))
+            socket.to(room).emit("end_game", (games[room].players[socket.id]) === "White" ? "Black" : "White");
+        }
+      }
       var users = io.sockets.adapter.rooms.get(room);
       if (typeof users === 'undefined') {
         users = []
@@ -167,6 +177,13 @@ io.on('connection', (socket) => {
   });
 });
 
+function isEmpty(obj) {
+    for(var prop in obj) {
+        if(obj.hasOwnProperty(prop))
+            return false;
+    }
+    return true;
+}
 
 httpServer.listen(8000);
 console.log("Now listening on port 8000");
