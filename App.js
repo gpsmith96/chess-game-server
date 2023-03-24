@@ -30,13 +30,11 @@ var games = {}
 
 io.on('connection', (socket) => {
   console.log('New client connected!');
-  socket.emit("connect_ack");
   //assign random room ID
   const defaultRoomID = generateRandomString(5);
   socket.join(defaultRoomID);
-  // socket.leave(socket.id);
 
-  socket.emit("message", "Server", "Connected to server in room " + defaultRoomID);
+  socket.emit("chat_message", "Server", "Connected to server in room " + defaultRoomID);
 
   var users = io.sockets.adapter.rooms.get(defaultRoomID);
   if (typeof users === 'undefined') {
@@ -54,16 +52,12 @@ io.on('connection', (socket) => {
     if (typeof users === 'undefined') {
       users = [];
     }
-    // else {
-    //   socket.emit("message", "Server", "List of " + users.size + (users.size === 1 ? " user":" users") + " in room:")
-    //   users.forEach((user) => (socket.emit("message", "Server", usernames[user])));
-    // }
     if (users.length === 0 || (users.size < 2 && !users.has(socket.id))){
       socket.rooms.forEach((room) => {
         if (room !== socket.id) socket.leave(room);
       });
       socket.join(roomId);
-      io.to(roomId).emit("message", "Server", usernames[socket.id] + " has joined the room!");
+      io.to(roomId).emit("chat_message", "Server", usernames[socket.id] + " has joined the room!");
       users = io.sockets.adapter.rooms.get(roomId);
       if (typeof users === 'undefined') {
         users = []
@@ -72,11 +66,11 @@ io.on('connection', (socket) => {
       socket.emit("join_success");
     } else {
       if (users.has(socket.id)) {
-        socket.emit("message", "Server", "User " + usernames[socket.id] + " is already in room " + roomId);
+        socket.emit("chat_message", "Server", "User " + usernames[socket.id] + " is already in room " + roomId);
         socket.emit("join_fail");
         socket.emit("ack", roomId, users.size);
       } else {
-        socket.emit("message", "Server", "Room " + roomId + " is full");
+        socket.emit("chat_message", "Server", "Room " + roomId + " is full");
         socket.emit("join_fail");
       }
     }
@@ -88,13 +82,13 @@ io.on('connection', (socket) => {
   });
 
   socket.on("broadcast", (roomId, msg) => {
-    console.log("broadcast from: " + usernames[socket.id] + " to room Id " + roomId);
+    console.log("broadcast from: " + usernames[socket.id] + " to room Id " + roomId + " : " + msg);
     var users = io.sockets.adapter.rooms.get(roomId);
     if (typeof users === 'undefined') {
       users = []
     }
-    if (users.has(socket.id)) socket.to(roomId).emit("message", usernames[socket.id], msg);
-    else socket.emit("message", "Server", "Can't broadcast to a room you aren't in");
+    if (users.has(socket.id)) io.to(roomId).emit("chat_message", usernames[socket.id], msg);
+    else socket.emit("chat_message", "Server", "Can't broadcast to a room you aren't in");
   });
 
   socket.on("connect_error", (err) => {
@@ -104,7 +98,7 @@ io.on('connection', (socket) => {
   socket.on("forfeit", () => {
     console.log("Forfeit from: " + usernames[socket]);
     socket.rooms.forEach((room) => {
-      if (room !== socket.id) {
+      if (room !== socket.id && typeof games[room] !== 'undefined') {
         for(let id in games[room].players) { //set the winner to the other player
           if(id === socket.id) games[room].loser = id;
           else games[room].winner = id;
@@ -161,7 +155,7 @@ io.on('connection', (socket) => {
     socket.rooms.forEach((room) => {
       if (room !== socket.id) {
         socket.to(room).emit("message", "Server", usernames[socket.id] + " has disconnected");
-        if (!isEmpty(games) & typeof games[room] === 'undefined'){
+        if (!isEmpty(games) && typeof games[room] !== 'undefined'){
           if(!games[room].hasOwnProperty('winner'))
             socket.to(room).emit("end_game", (games[room].players[socket.id]) === "White" ? "Black" : "White");
         }
